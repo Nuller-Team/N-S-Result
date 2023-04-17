@@ -1,17 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
-//nnn.ed.jpの成績確認ページの書き換えを行う拡張機能/////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-/////課題取得・処理//////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 const subjectElements = document.getElementsByClassName('align_left');
 const subjectArray = [];
-
 var done_task = 0
-
 var not_task = 0
-
 for (let i = 0; i < subjectElements.length; i++) {
   const subject = subjectElements[i].innerText.trim();
   const reportLimitDates = subjectElements[i].parentElement.getElementsByClassName('report_limit_date');
@@ -39,13 +29,9 @@ const subjects = subjectArray.map(subjectInfo => {
     reportLimitDates: reportLimitDates,
     reportProgresses: reportProgresses
   };
-  console.log(subjectsOutput);
   return subjectsOutput;
 
 });
-////////////////////////////////////////////////////////////////////////////////
-/////課題表示////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 const resultContainer = document.getElementById('container');
 resultContainer.innerHTML = `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.18/dist/tailwind.min.css">
 <div class="container mx-auto px-4 py-8">
@@ -99,8 +85,6 @@ resultContainer.innerHTML = `<link rel="stylesheet" href="https://cdn.jsdelivr.n
                 <p class="text-3xl my-3 font-bold" id="gauge"></p>
             </div>
         </div>
-
-
     </div>
     <hr>
     <!-- 未完了教科 -->
@@ -119,21 +103,44 @@ resultContainer.innerHTML = `<link rel="stylesheet" href="https://cdn.jsdelivr.n
 </div>
 </div>
 `;
-
-
-////////////////////////////////////////////////////////////////////////////////
-/////プルダウン生成//////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
+const done_html_code = `
+    <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
+        <div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
+            <h2 class="text-xl font-semibold mb-4">{subject}</h2>
+            <div class="mb-4">
+                <div class="text-sm text-gray-600 mb-2">進捗度</div>
+                <div class="text-sm text-green-600">{reportProgresses[j]}%</div>
+                <div class="h-4 bg-blue-200 rounded-full">
+                    <div class="h-full bg-green-500 rounded-full" style="width: {reportProgresses[j]}%;"></div>
+                </div>
+            </div>
+            <div class="text-sm text-gray-600">期限:{reportLimitDates[j]}</div>
+            <div class="text-sm text-green-600">完了済み</div>
+        </div>
+    </div>
+`;
+const not_html_code = `
+<div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
+<div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
+    <h2 class="text-xl font-semibold mb-4">{subject}</h2>
+    <div class="mb-4">
+        <div class="text-sm text-gray-600 mb-2">進捗度</div>
+        <div class="text-sm text-red-600">{reportProgresses[j]}%</div>
+        <div class="h-4 bg-blue-200 rounded-full">
+            <div class="h-full bg-red-500 rounded-full" style="width: {reportProgresses[j]}%;"></div>
+        </div>
+    </div>
+    <div class="text-sm text-red-600">期限:{reportLimitDates[j]}</div>
+    <div class="text-sm text-red-600">未完了</div>
+</div>
+</div>
+`;
 const completedSubjects = [];
-
 const incompleteSubjects = [];
-
 for (let i = 0; i < subjects.length; i++) {
   const subject = subjects[i].subject;
   const reportLimitDates = subjects[i].reportLimitDates;
   const reportProgresses = subjects[i].reportProgresses;
-
   if (reportProgresses.every(progress => Number(progress) >= 100)) {
     completedSubjects.push({
       subject: subject,
@@ -156,156 +163,15 @@ const createSelectOptions = (options) => {
   selectOptions += `<option value="すべて">すべて</option>`;
   return selectOptions;
 };
-const reportLimitDatesList = [...new Set(subjects.flatMap(subject => subject.reportLimitDates))];
+const reportLimitDatesList = [...new Set(subjects.flatMap(subject => subject.reportLimitDates))].sort((a, b) => {
+  const [aMonth, aDay] = a.split('/');
+  const [bMonth, bDay] = b.split('/');
+  return new Date(2021, aMonth - 1, aDay) - new Date(2021, bMonth - 1, bDay);
+});
+
 const selectOptions = createSelectOptions(reportLimitDatesList);
 const selectElement = document.getElementById('dates');
 selectElement.innerHTML = selectOptions;
-
-
-////////////////////////////////////////////////////////////////////////////////
-/////課題表示(日付フィルター)/////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-
-function day_filter(dates) {
-  for (let i = 0; i < subjects.length; i++) {
-    const subject = subjects[i].subject;
-    const reportLimitDates = subjects[i].reportLimitDates;
-    const reportProgresses = subjects[i].reportProgresses;
-    for (let j = 0; j < reportLimitDates.length; j++) {
-      if (reportLimitDates[j] == dates) {
-        if (reportProgresses[j] == 100) {
-          document.getElementById("done").insertAdjacentHTML('afterbegin', `
-            <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
-          <div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
-            <h2 class="text-xl font-semibold mb-4">${subject}</h2>
-            <div class="mb-4">
-              <div class="text-sm text-gray-600 mb-2">進捗度</div>
-              <div class="h-4 bg-blue-200 rounded-full">
-                  <div class="h-full bg-green-500 rounded-full" style="width: ${reportProgresses[j]}%;"></div>
-              </div>
-            </div>
-            <div class="text-sm text-gray-600">期限:${reportLimitDates[j]}</div>
-            <div class="text-sm text-green-600">完了済み</div>
-          </div>
-          </div>
-        `);
-          done_task++;
-        }
-        else {
-          document.getElementById("not").insertAdjacentHTML('afterbegin', `
-                <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
-              <div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
-                <h2 class="text-xl font-semibold mb-4">${subject}</h2>
-                <div class="mb-4">
-                  <div class="text-sm text-gray-600 mb-2">進捗度</div>
-                  <div class="h-4 bg-blue-200 rounded-full">
-                      <div class="h-full bg-red-500 rounded-full" style="width: ${reportProgresses[j]}%;"></div>
-                  </div>
-                </div>
-                <div class="text-sm text-red-600">期限:${reportLimitDates[j]}</div>
-                <div class="text-sm text-red-600">未完了</div>
-              </div>
-              </div>
-            `);
-          not_task++;
-        }
-      }
-    }
-  }
-  var all_task = not_task + done_task;
-  document.getElementById("task").innerHTML = `${done_task}/${all_task}`
-  var completion_rate = (done_task / all_task) * 100;
-  var rounded_completion_rate = Math.round(completion_rate * 100) / 100;
-
-  document.getElementById("gauge").innerText = rounded_completion_rate.toFixed(2) + "%";
-}
-function all_filter() {
-  for (let i = 0; i < subjects.length; i++) {
-
-    const subject = subjects[i].subject;
-    const reportLimitDates = subjects[i].reportLimitDates;
-    const reportProgresses = subjects[i].reportProgresses;
-    for (let j = 0; j < reportLimitDates.length; j++) {
-      if (reportProgresses[j] == 100) {
-        document.getElementById("done").insertAdjacentHTML('afterbegin', `
-              <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
-            <div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
-              <h2 class="text-xl font-semibold mb-4">${subject}</h2>
-              <div class="mb-4">
-                <div class="text-sm text-gray-600 mb-2">進捗度</div>
-                <div class="h-4 bg-blue-200 rounded-full">
-                    <div class="h-full bg-green-500 rounded-full" style="width: ${reportProgresses[j]}%;"></div>
-                </div>
-              </div>
-              <div class="text-sm text-gray-600">期限:${reportLimitDates[j]}</div>
-              <div class="text-sm text-green-600">完了済み</div>
-            </div>
-            </div>
-          `);
-        done_task++;
-      }
-      else {
-        document.getElementById("not").insertAdjacentHTML('afterbegin', `
-                  <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 mb-8">
-                <div class="bg-white shadow-lg rounded-lg p-6 h-full" id="result" style="display:block;">
-                  <h2 class="text-xl font-semibold mb-4">${subject}</h2>
-                  <div class="mb-4">
-                    <div class="text-sm text-gray-600 mb-2">進捗度</div>
-                    <div class="h-4 bg-blue-200 rounded-full">
-                        <div class="h-full bg-red-500 rounded-full" style="width: ${reportProgresses[j]}%;"></div>
-                    </div>
-                  </div>
-                  <div class="text-sm text-red-600">期限:${reportLimitDates[j]}</div>
-                  <div class="text-sm text-red-600">未完了</div>
-                </div>
-                </div>
-              `);
-        not_task++;
-      }
-      var all_task = not_task + done_task;
-      document.getElementById("task").innerHTML = `${done_task}/${all_task}`
-      var completion_rate = (done_task / all_task) * 100;
-      var rounded_completion_rate = Math.round(completion_rate * 100) / 100;
-
-      document.getElementById("gauge").innerText = rounded_completion_rate.toFixed(2) + "%";
-    }
-  }
-}
-////////////////////////////////////////////////////////////////////////////////
-/////タイマー表示////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-function updateTime() {
-  if (selectElement.value !== "すべて") {
-    const deadlineStr = selectElement.value;
-    const deadlineArr = deadlineStr.split("/");
-    const deadlineMonth = parseInt(deadlineArr[0]) - 1;
-    const deadlineDay = parseInt(deadlineArr[1]);
-
-    const deadline = new Date(new Date().getFullYear(), deadlineMonth, deadlineDay);
-    const now = new Date();
-
-    if (now > deadline) {
-      document.getElementById("times").innerText = "期限切れ";
-      document.getElementById("times").style.color = "#F15B5B"
-    } else {
-      const timeDifference = deadline - now;
-      const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-
-      document.getElementById("times").innerText = days + 1 + "日" + hours + "時間" + minutes + "分";
-      document.getElementById("times").style.color = "#009D5B"
-    } document.getElementById("times_alt").innerHTML = "残り"
-
-  }
-  else {
-    return
-  }
-}
-////////////////////////////////////////////////////////////////////////////////
-/////UI調整//////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 function color() {
   if (document.getElementById("gauge").textContent == "100%") {
     document.getElementById("gauge").style.color = "#009D5B"
@@ -314,9 +180,6 @@ function color() {
     document.getElementById("gauge").style.color = "#F15B5B"
   }
 }
-////////////////////////////////////////////////////////////////////////////////
-/////フィルター動作//////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 selectElement.addEventListener('change', () => {
   intervalId = setInterval(updateTime, 1000);
   document.getElementById("not").innerHTML = ""
@@ -327,7 +190,6 @@ selectElement.addEventListener('change', () => {
     all_filter()
     document.getElementById("times").innerText = "";
     document.getElementById("times_alt").innerText = "";
-
   }
   else {
     day_filter(selectElement.value);
@@ -336,14 +198,95 @@ selectElement.addEventListener('change', () => {
     document.getElementById("times").innerText = "計算中...";
     color()
   }
-
-
 });
-////////////////////////////////////////////////////////////////////////////////
-/////初期設定////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-day_filter(selectElement.value);
-setInterval(updateTime, 1000);
-document.getElementById("times").innerText = "計算中...";
+function updateTime() {
+  if (selectElement.value !== "すべて") {
+    const deadlineStr = selectElement.value;
+    const deadlineArr = deadlineStr.split("/");
+    const deadlineMonth = parseInt(deadlineArr[0]) - 1;
+    const deadlineDay = parseInt(deadlineArr[1]);
+    const deadline = new Date(new Date().getFullYear(), deadlineMonth, deadlineDay);
+    const now = new Date();
+    if (now > deadline) {
+      document.getElementById("times").innerText = "期限切れ";
+      document.getElementById("times").style.color = "#F15B5B"
+    } else {
+      const timeDifference = deadline - now;
+      const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+      document.getElementById("times").innerText = days + 1 + "日" + hours + "時間" + minutes + "分";
+      document.getElementById("times").style.color = "#009D5B"
+    } document.getElementById("times_alt").innerHTML = "残り"
 
-color()
+  }
+  else {
+    return
+  }
+}
+function all_filter() {
+  for (let i = 0; i < subjects.length; i++) {
+
+    const subject = subjects[i].subject;
+    const reportLimitDates = subjects[i].reportLimitDates;
+    const reportProgresses = subjects[i].reportProgresses;
+    for (let j = 0; j < reportLimitDates.length; j++) {
+      if (reportProgresses[j] == 100) {
+        const done_html = done_html_code.replace(/\{subject}/g, subject)
+          .replace(/\{reportProgresses\[j\]}/g, reportProgresses[j])
+          .replace(/\{reportLimitDates\[j\]}/g, reportLimitDates[j]);
+        document.getElementById("done").insertAdjacentHTML('afterbegin', done_html);
+        done_task++;
+      }
+      else {
+        const not_html = not_html_code.replace(/\{subject}/g, subject)
+          .replace(/\{reportProgresses\[j\]}/g, reportProgresses[j])
+          .replace(/\{reportLimitDates\[j\]}/g, reportLimitDates[j]);
+        document.getElementById("not").insertAdjacentHTML('afterbegin', not_html);
+        not_task++;
+      }
+    }
+    var all_task = not_task + done_task;
+    document.getElementById("task").innerHTML = `${done_task}/${all_task}`
+    var completion_rate = (done_task / all_task) * 100;
+    var rounded_completion_rate = Math.round(completion_rate * 100) / 100;
+    document.getElementById("gauge").innerText = rounded_completion_rate.toFixed(2) + "%";
+  }
+}
+function day_filter(dates) {
+  for (let i = 0; i < subjects.length; i++) {
+    const subject = subjects[i].subject;
+    const reportLimitDates = subjects[i].reportLimitDates;
+    const reportProgresses = subjects[i].reportProgresses;
+    for (let j = 0; j < reportLimitDates.length; j++) {
+      if (reportLimitDates[j] == dates) {
+        if (reportProgresses[j] == 100) {
+          const done_html = done_html_code.replace(/\{subject}/g, subject)
+            .replace(/\{reportProgresses\[j\]}/g, reportProgresses[j])
+            .replace(/\{reportLimitDates\[j\]}/g, reportLimitDates[j]);
+          document.getElementById("done").insertAdjacentHTML('afterbegin', done_html);
+          done_task++;
+        }
+        else {
+          const not_html = not_html_code.replace(/\{subject}/g, subject)
+            .replace(/\{reportProgresses\[j\]}/g, reportProgresses[j])
+            .replace(/\{reportLimitDates\[j\]}/g, reportLimitDates[j]);
+          document.getElementById("not").insertAdjacentHTML('afterbegin', not_html);
+          not_task++;
+        }
+      }
+    }
+  }
+  var all_task = not_task + done_task;
+  document.getElementById("task").innerHTML = `${done_task}/${all_task}`
+  var completion_rate = (done_task / all_task) * 100;
+  var rounded_completion_rate = Math.round(completion_rate * 100) / 100;
+  document.getElementById("gauge").innerText = rounded_completion_rate.toFixed(2) + "%";
+}
+function start() {
+  day_filter(selectElement.value);
+  setInterval(updateTime, 1000);
+  document.getElementById("times").innerText = "計算中...";
+  color()
+}
+start()
