@@ -43,8 +43,6 @@ https://n-s-apps.nuller.net/result
 
 MIT License の全文は以下の通りです。
 
-markdown
-Copy code
 # オープンソースライセンスについて
 
 このリポジトリはオープンソースソフトウェアであり、以下のライセンスに従って利用することができます。
